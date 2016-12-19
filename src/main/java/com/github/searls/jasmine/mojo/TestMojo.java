@@ -10,8 +10,10 @@ import com.github.searls.jasmine.model.JasmineResult;
 import com.github.searls.jasmine.runner.CreatesRunner;
 import com.github.searls.jasmine.runner.ReporterType;
 import com.github.searls.jasmine.runner.SpecRunnerExecutor;
+import com.github.searls.jasmine.runner.WebDriverCallback;
 import com.github.searls.jasmine.server.ResourceHandlerConfigurator;
 import com.github.searls.jasmine.server.ServerManager;
+import jscover.util.IoUtils;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.MojoFailureException;
@@ -24,6 +26,7 @@ import org.eclipse.aether.RepositorySystem;
 import org.eclipse.aether.RepositorySystemSession;
 import org.eclipse.aether.repository.RemoteRepository;
 import org.eclipse.jetty.server.Server;
+import org.openqa.selenium.JavascriptExecutor;
 import org.openqa.selenium.WebDriver;
 
 import javax.inject.Inject;
@@ -38,6 +41,8 @@ import java.util.Properties;
  */
 @Mojo(name = "test", defaultPhase = LifecyclePhase.TEST, requiresDependencyResolution = ResolutionScope.TEST)
 public class TestMojo extends AbstractJasmineMojo {
+
+  private IoUtils ioUtils = IoUtils.getInstance();
 
   /**
    * Determines the Selenium WebDriver class we'll use to execute the tests. See the Selenium documentation for more details.
@@ -167,6 +172,12 @@ public class TestMojo extends AbstractJasmineMojo {
   )
   private MavenSession mavenSession;
 
+  @Parameter
+  protected boolean collectionCoverage;
+
+  @Parameter
+  protected List<String> instrumentPathArgs;
+
   private RepositorySystem repositorySystem;
 
   private final RelativizesFilePaths relativizesFilePaths;
@@ -226,6 +237,20 @@ public class TestMojo extends AbstractJasmineMojo {
 
   private JasmineResult executeSpecs(URL runner) throws Exception {
     WebDriver driver = this.createDriver();
+    WebDriverCallback callback = new WebDriverCallback() {
+      @Override
+      public void execute(WebDriver driver) {
+        if (collectionCoverage) {
+          String json = (String) ((JavascriptExecutor) driver).executeScript("return jscoverage_serializeCoverageToJSON();");
+          File dest = new File(coverageTargetDir, "jscoverage.json");
+          ioUtils.copy(json, dest);
+          //File jscoverageJS = new File(config.getDestDir(), "jscoverage.js");
+          //String js = ioUtils.toString(jscoverageJS);
+          //ioUtils.copy(js + "\njscoverage_isReport = true;", jscoverageJS);
+          getLog().info("Saved coverage results");
+        }
+      }
+    };
     JasmineResult result = new SpecRunnerExecutor().execute(
       runner,
       driver,
@@ -234,7 +259,8 @@ public class TestMojo extends AbstractJasmineMojo {
       this.getLog(),
       this.format,
       getReporters(),
-      getFileSystemReporters()
+      getFileSystemReporters(),
+      callback
     );
     return result;
   }

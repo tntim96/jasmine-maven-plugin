@@ -30,7 +30,7 @@ public class SpecRunnerExecutor {
   }
 
 
-  public JasmineResult execute(final URL runnerUrl, final WebDriver driver, final int timeout, final boolean debug, final Log log, final String format, final List<Reporter> reporters, final List<FileSystemReporter> fileSystemReporters) {
+  public JasmineResult execute(final URL runnerUrl, final WebDriver driver, final int timeout, final boolean debug, final Log log, final String format, final List<Reporter> reporters, final List<FileSystemReporter> fileSystemReporters, WebDriverCallback callback) {
     try {
       if (!(driver instanceof JavascriptExecutor)) {
         throw new RuntimeException("The provided web driver can't execute JavaScript: " + driver.getClass());
@@ -42,6 +42,9 @@ public class SpecRunnerExecutor {
       consoleErrorChecker.checkForConsoleErrors(driver, log);
 
       storeFileSystemReports(fileSystemReporters, executor, debug);
+      if (callback != null) {
+        callback.execute(driver);
+      }
 
       JasmineResult jasmineResult = new JasmineResult();
       jasmineResult.setDetails(buildReports(reporters, executor, format));

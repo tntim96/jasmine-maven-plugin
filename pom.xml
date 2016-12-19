@@ -263,6 +263,11 @@
       <artifactId>phantomjs-maven-core</artifactId>
       <version>0.7</version>
     </dependency>
+    <dependency>
+      <groupId>com.github.tntim96</groupId>
+      <artifactId>JSCover</artifactId>
+      <version>1.0.25</version>
+    </dependency>
 
     <!-- Plugin test deps -->
     <dependency>

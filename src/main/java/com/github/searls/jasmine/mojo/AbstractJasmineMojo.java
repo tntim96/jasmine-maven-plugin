@@ -146,6 +146,14 @@ public abstract class AbstractJasmineMojo extends AbstractMojo implements Jasmin
   protected File jasmineTargetDir;
 
   /**
+   * Target directory for coverage files created by the plugin.
+   *
+   * @since 2.3.0
+   */
+  @Parameter(defaultValue = "${project.build.directory}${file.separator}coverage")
+  protected File coverageTargetDir;
+
+  /**
    * Skip execution of tests.
    *
    * @see <a href="http://maven.apache.org/general.html#skip-test">http://maven.apache.org/general.html#skip-test</a>

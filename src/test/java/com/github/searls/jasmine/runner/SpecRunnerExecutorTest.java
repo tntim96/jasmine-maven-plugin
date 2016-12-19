@@ -49,6 +49,8 @@ public class SpecRunnerExecutorTest {
   private String format = null;
   @Mock
   File reporter;
+  @Mock
+  private WebDriverCallback callback;
   private String report = "report";
 
   private SpecRunnerExecutor subject;
@@ -66,12 +68,24 @@ public class SpecRunnerExecutorTest {
 
   @Test
   public void shouldExecute() throws Exception {
-    JasmineResult result = subject.execute(runnerUrl, webDriver, timeout, debug, log, format, Collections.singletonList(new Reporter(reporter)), Collections.singletonList(new FileSystemReporter(junitXmlReport, junitXmlReporter)));
+    JasmineResult result = subject.execute(runnerUrl, webDriver, timeout, debug, log, format, Collections.singletonList(new Reporter(reporter)), Collections.singletonList(new FileSystemReporter(junitXmlReport, junitXmlReporter)), null);
 
     verify(webDriver).get(runnerUrl.toString());
     verify(webDriverWaiter).waitForRunnerToFinish(webDriver, timeout, debug, log);
     verify(fileUtilsWrapper).writeStringToFile(junitXmlReport, report);
     assertThat(result, is(not(nullValue())));
     assertThat(result.getDetails(), containsString(report));
+  }
+
+  @Test
+  public void shouldExecuteCallback() throws Exception {
+    JasmineResult result = subject.execute(runnerUrl, webDriver, timeout, debug, log, format, Collections.singletonList(new Reporter(reporter)), Collections.singletonList(new FileSystemReporter(junitXmlReport, junitXmlReporter)), callback);
+
+    verify(webDriver).get(runnerUrl.toString());
+    verify(webDriverWaiter).waitForRunnerToFinish(webDriver, timeout, debug, log);
+    verify(fileUtilsWrapper).writeStringToFile(junitXmlReport, report);
+    assertThat(result, is(not(nullValue())));
+    assertThat(result.getDetails(), containsString(report));
+    verify(callback).execute(webDriver);
   }
 }
